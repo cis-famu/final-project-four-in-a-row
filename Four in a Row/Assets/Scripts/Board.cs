@@ -1,97 +1,133 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
-public class GameManager : MonoBehaviour
+public enum PlayerType { NONE, RED, GREEN }
+
+public struct GridPos { public int row, col; }
+
+public class Board
 {
-    [SerializeField]
-    GameObject red, green;
+    PlayerType[][] playerBoard;
+    GridPos currentPos;
 
-    bool isPlayer, hasGameFinished;
-
-    [SerializeField]
-    Text turnMessage;
-
-    const string RED_MESSAGE = "Red's Turn";
-    const string GREEN_MESSAGE = "Greens's Turn";
-
-    Color RED_COLOR = new Color(231, 29, 54, 255) / 255;
-    Color GREEN_COLOR = new Color(0, 222, 1, 255) / 255;
-
-    Board myBoard;
-
-
-    private void Awake()
+    public Board()
     {
-        isPlayer = true;
-        hasGameFinished = false;
-        turnMessage.text = RED_MESSAGE;
-        turnMessage.color = RED_COLOR;
-        myBoard = new Board();
-    }
-
-
-    public void GameStart()
-    {
-        UnityEngine.SceneManagement.SceneManager.LoadScene(0);
-    }
-
-    public void GameQuit()
-    {
-#if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-#endif
-        Application.Quit();
-    }
-
-
-    private void Update()
-    {
-        if (Input.GetMouseButtonDown(0))
+        playerBoard = new PlayerType[6][];
+        for (int i = 0; i < playerBoard.Length; i++)
         {
-            //If GameFinsished then return
-            if (hasGameFinished) return;
-
-            //Raycast2D
-            Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            Vector2 mousePos2D = new Vector2(mousePos.x, mousePos.y);
-            RaycastHit2D hit = Physics2D.Raycast(mousePos2D, Vector2.zero);
-            if (!hit.collider) return;
-
-            if (hit.collider.CompareTag("Press"))
+            playerBoard[i] = new PlayerType[7];
+            for (int j = 0; j < playerBoard[i].Length; j++)
             {
-                //Check out of Bounds
-                if (hit.collider.gameObject.GetComponent<Column>().targetlocation.y > 1.5f) return;
-
-                //Spawn the GameObject
-                Vector3 spawnPos = hit.collider.gameObject.GetComponent<Column>().spawnLocation;
-                Vector3 targetPos = hit.collider.gameObject.GetComponent<Column>().targetlocation;
-                GameObject circle = Instantiate(isPlayer ? red : green);
-                circle.transform.position = spawnPos;
-                circle.GetComponent<Mover>().targetPostion = targetPos;
-
-                //Increase the targetLocationHeight
-                hit.collider.gameObject.GetComponent<Column>().targetlocation = new Vector3(targetPos.x, targetPos.y + 0.7f, targetPos.z);
-
-                //UpdateBoard
-                myBoard.UpdateBoard(hit.collider.gameObject.GetComponent<Column>().col - 1, isPlayer);
-                if (myBoard.Result(isPlayer))
-                {
-                    turnMessage.text = (isPlayer ? "Red" : "Green") + " Wins!";
-                    hasGameFinished = true;
-                    return;
-                }
-
-                //TurnMessage
-                turnMessage.text = !isPlayer ? RED_MESSAGE : GREEN_MESSAGE;
-                turnMessage.color = !isPlayer ? RED_COLOR : GREEN_COLOR;
-
-                //Change PlayerTurn
-                isPlayer = !isPlayer;
+                playerBoard[i][j] = PlayerType.NONE;
             }
-
         }
     }
 
+    public void UpdateBoard(int col, bool isPlayer)
+    {
+        int updatePos = 6;
+        for (int i = 5; i >= 0; i--)
+        {
+            if (playerBoard[i][col] == PlayerType.NONE)
+            {
+                updatePos--;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        playerBoard[updatePos][col] = isPlayer ? PlayerType.RED : PlayerType.GREEN;
+        currentPos = new GridPos { row = updatePos, col = col };
+    }
+
+    public bool Result(bool isPlayer)
+    {
+        PlayerType current = isPlayer ? PlayerType.RED : PlayerType.GREEN;
+        return IsHorizontal(current) || IsVertical(current) || IsDiagonal(current) || IsReverseDiagonal(current);
+    }
+
+    bool IsHorizontal(PlayerType current)
+    {
+        GridPos start = GetEndPoint(new GridPos { row = 0, col = -1 });
+        List<GridPos> toSearchList = GetPlayerList(start, new GridPos { row = 0, col = 1 });
+        return SearchResult(toSearchList, current);
+    }
+
+    bool IsVertical(PlayerType current)
+    {
+        GridPos start = GetEndPoint(new GridPos { row = -1, col = 0 });
+        List<GridPos> toSearchList = GetPlayerList(start, new GridPos { row = 1, col = 0 });
+        return SearchResult(toSearchList, current);
+    }
+
+    bool IsDiagonal(PlayerType current)
+    {
+        GridPos start = GetEndPoint(new GridPos { row = -1, col = -1 });
+        List<GridPos> toSearchList = GetPlayerList(start, new GridPos { row = 1, col = 1 });
+        return SearchResult(toSearchList, current);
+    }
+
+    bool IsReverseDiagonal(PlayerType current)
+    {
+        GridPos start = GetEndPoint(new GridPos { row = -1, col = 1 });
+        List<GridPos> toSearchList = GetPlayerList(start, new GridPos { row = 1, col = -1 });
+        return SearchResult(toSearchList, current);
+    }
+
+    GridPos GetEndPoint(GridPos diff)
+    {
+        GridPos result = new GridPos { row = currentPos.row, col = currentPos.col };
+        while (result.row + diff.row < 6 &&
+                result.col + diff.col < 7 &&
+                result.row + diff.row >= 0 &&
+                result.col + diff.col >= 0)
+        {
+            result.row += diff.row;
+            result.col += diff.col;
+        }
+        return result;
+    }
+
+    List<GridPos> GetPlayerList(GridPos start, GridPos diff)
+    {
+        List<GridPos> resList;
+        resList = new List<GridPos> { start };
+        GridPos result = new GridPos { row = start.row, col = start.col };
+        while (result.row + diff.row < 6 &&
+                result.col + diff.col < 7 &&
+                result.row + diff.row >= 0 &&
+                result.col + diff.col >= 0)
+        {
+            result.row += diff.row;
+            result.col += diff.col;
+            resList.Add(result);
+        }
+
+        return resList;
+    }
+
+    bool SearchResult(List<GridPos> searchList, PlayerType current)
+    {
+        int counter = 0;
+
+        for (int i = 0; i < searchList.Count; i++)
+        {
+            PlayerType compare = playerBoard[searchList[i].row][searchList[i].col];
+            if (compare == current)
+            {
+                counter++;
+                if (counter == 4)
+                    break;
+            }
+            else
+            {
+                counter = 0;
+            }
+        }
+
+        return counter >= 4;
+    }
 }
