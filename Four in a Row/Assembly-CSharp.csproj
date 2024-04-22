@@ -95,6 +95,9 @@
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/CameraController.cs" />
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/Benchmark03.cs" />
     <Compile Include="Assets/TextMesh Pro/Examples &amp; Extras/Scripts/TMP_TextInfoDebugTool.cs" />
+    <Compile Include="Assets\Scripts\Board.cs" />
+    <Compile Include="Assets\Scripts\Column.cs" />
+    <Compile Include="Assets\Scripts\Board %28copy%29 %28copy%29.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets/TextMesh Pro/Shaders/TMPro.cginc" />
