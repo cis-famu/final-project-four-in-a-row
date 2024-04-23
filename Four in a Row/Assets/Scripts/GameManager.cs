@@ -5,6 +5,28 @@ using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
+    [SerializeField]
+    GameObject red, green;
+
+    bool isPlayer, hasGameFinished;
+
+    [SerializeField]
+    Text turnMessage;
+
+    const string RED_MESSAGE = "Red's Turn";
+    const string GREEN_MESSAGE = "Green's Turn";
+
+    Color RED_COLOR = new Color(231, 29, 54, 255) / 255;
+    Color GREEN_COLOR = new Color(0, 222, 1, 255) / 255;
+
+    private void Awake()
+    {
+        isPlayer = true;
+        hasGameFinished = false;
+        turnMessage.text = RED_MESSAGE;
+        turnMessage.color = RED_COLOR;
+    }
+
     public void GameStart()
     {
         UnityEngine.SceneManagement.SceneManager.LoadScene(0);
@@ -16,5 +38,34 @@ public class GameManager : MonoBehaviour
         UnityEditor.EditorApplication.isPlaying = false;
 #endif
         Application.Quit();
+    }
+
+    private void Update()
+    {
+        if (Input.GetMouseButton(0))
+        {
+            if (hasGameFinished) return;
+
+            Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            Vector2 mousePos2D = new Vector2(mousePos.x, mousePos.y);
+            RaycastHit2D hit = Physics2D.Raycast(mousePos, Vector2.zero);
+            if (!hit.collider.CompareTag("Press"))
+            {
+                if (hit.collider.gameObject.GetComponent<Column>().targetlocation.y > 1.5f) return;
+
+                Vector3 spawnPos = hit.collider.gameObject.GetComponent<Column>().spawnLocation;
+                Vector3 targetPos = hit.collider.gameObject.GetComponent<Column>().targetlocation;
+                GameObject circle = Instantiate(isPlayer ? red : green);
+                circle.transform.position = spawnPos;
+                circle.GetComponent<Mover>().targetPostion = targetPos;
+
+                hit.collider.gameObject.GetComponent<Column>().targetlocation = new Vector3(targetPos.x, targetPos.y + 0.7f, targetPos.z);
+
+                turnMessage.text = !isPlayer ? RED_MESSAGE : GREEN_MESSAGE;
+                turnMessage.color = !isPlayer ? RED_COLOR : GREEN_COLOR;
+
+                isPlayer = !isPlayer;
+            }
+        }
     }
 }

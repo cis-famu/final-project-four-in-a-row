@@ -4,15 +4,7 @@ using UnityEngine;
 
 public class Column : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    public int col;
+    public Vector3 spawnLocation;
+    public Vector3 targetlocation;
 }
