@@ -4,15 +4,15 @@ using UnityEngine;
 
 public class Mover : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
+
+    [SerializeField]
+    float speed = 10f;
+    public Vector3 targetPostion;
 
     // Update is called once per frame
     void Update()
     {
-        
+        float step = speed * Time.deltaTime;
+        transform.position = Vector3.MoveTowards(transform.position, targetPostion, step);
     }
 }
